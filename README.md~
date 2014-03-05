@@ -1,0 +1,24 @@
+Image Poll
+----------
+
+
+
+
+Front End
+=========
+
+The angularjs app is located in the `app/client/` directory. In order to build and deploy the static files you will need the following:
+ * nodejs
+ * bower (installed globally)
+ * grunt (installed globally)
+ 
+
+###Building the Angularjs app
+
+
+
+
+
+Back End
+========
+
