@@ -2,5 +2,18 @@
 # This file defines all application routes (Higher priority routes first)
 # ~~~~
 
+
+
+# Route to Angular.js App static dist files
+GET        /                        controllers.Assets.at(path="/public", file="/javascripts/dist/index.html")
+
+# Below is Angular.js specific routing so I can have the above root path.
+GET        /styles/*file                controllers.Assets.at(path="/public/javascripts/dist/styles", file)
+GET        /scripts/*file               controllers.Assets.at(path="/public/javascripts/dist/scripts", file)
+GET        /views/*file                 controllers.Assets.at(path="/public/javascripts/dist/views", file)
+GET        /images/*file                controllers.Assets.at(path="/public/javascripts/dist/images", file)
+
+
+
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.at(path="/public", file)

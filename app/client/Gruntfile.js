@@ -22,7 +22,7 @@ module.exports = function (grunt) {
     yeoman: {
       // configurable paths
       app: require('./bower.json').appPath || 'app',
-      dist: 'dist'
+      dist: '../../public/javascripts/dist'
     },
 
     // Watches files for changes and runs tasks based on the changed files
@@ -119,7 +119,8 @@ module.exports = function (grunt) {
             '<%= yeoman.dist %>/*',
             '!<%= yeoman.dist %>/.git*'
           ]
-        }]
+        }],
+        options: { force: true } // grunt-contrib-clean cannot delete above current directory
       },
       server: '.tmp'
     },

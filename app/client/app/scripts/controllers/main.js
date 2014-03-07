@@ -2,4 +2,5 @@
 
 angular.module('clientApp')
   .controller('MainCtrl', function ($scope) {
+    $scope.blarg = [];
   });
