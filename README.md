@@ -43,10 +43,12 @@ Back End
 The Scala Play! app is located in the root directory of the git repo. In order to build and deploy the scala API + the staticly built angular files in `public/` you will need sbt installed.
 You will also need mongo to setup the database.
 
+###Setting up Mongo
+`mongod`
+
 ###Running the Play! API + most recently built angular files
 
 `sbt run`
-
 
 ###Testing the Back End
 
