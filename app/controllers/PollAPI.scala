@@ -20,12 +20,12 @@ object PollAPI extends Controller with MongoController {
     val futurePollOption: Future[Option[JsObject]] = pollCollection.find(Json.obj("hashId" -> id)).one[JsObject]  
     
     val pollFuture: Future[JsObject] = for { 
-      option <- futurePollOption; 
+      option <- futurePollOption 
       p <- Future(option.getOrElse(Json.obj("error" ->"NotFound"))) 
     } yield p
 
     pollFuture.map { poll =>
-      if (poll == Json.obj("error" ->"NotFound")) { //TODO: This can be cleaner
+      if (poll == Json.obj("error" ->"NotFound")) {
         println("Error: Poll Not found");
         NotFound("404; Poll Not Found")
       } else {
