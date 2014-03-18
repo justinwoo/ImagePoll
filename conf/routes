@@ -3,6 +3,7 @@
 # ~~~~
 
 GET 	   /polls/:id    			controllers.PollAPI.getPollById(id)
+POST       /polls                               controllers.PollAPI.createPollFromJson
 
 # Route to Angular.js App static dist files
 GET        /                        controllers.Assets.at(path="/public", file="/javascripts/dist/index.html")

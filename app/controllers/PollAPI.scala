@@ -27,13 +27,25 @@ object PollAPI extends Controller with MongoController {
     pollFuture.map { poll =>
       if (poll == Json.obj("error" ->"NotFound")) {
         println("Error: Poll Not found");
-        NotFound("404; Poll Not Found")
+        NotFound(poll)
       } else {
         Ok(poll)
       }
     } recover {
       case _ => BadRequest
     }
+  }
+
+  def createPollFromJson = Action.async(parse.json) { request =>
+    println(request)
+    println(request.body)
+    request.body.validate[Poll].map { poll =>
+      println(poll)
+      pollCollection.insert(poll).map { error =>
+        Logger.debug("Successfully inserted with error: " + error)
+        Created(Json.obj("id" -> poll.hashId))
+      }   
+    }.getOrElse(Future.successful(BadRequest("invalid json payload"))) //TODO: more detailed errors
   }
 
 }
