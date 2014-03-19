@@ -42,7 +42,10 @@ object PollAPI extends Controller with MongoController {
     request.body.validate[Poll].map { poll =>
       println(poll)
       pollCollection.insert(poll).map { error =>
-        Logger.debug("Successfully inserted with error: " + error)
+        if(error.inError)
+          Logger.debug("Successfully inserted with error: " + error)
+        else
+          Logger.debug("Successfully inserted with no errors!")
         Created(Json.obj("id" -> poll.hashId))
       }   
     }.getOrElse(Future.successful(BadRequest(Json.obj("error" ->"Malformed payload")))) //TODO: more detailed errors

@@ -7,17 +7,20 @@ import play.api.test.Helpers._
 import play.api._
 import play.modules.reactivemongo.json.collection.JSONCollection
 import com.github.nscala_time.time.Imports._
+import play.api.libs.concurrent.Execution.Implicits.defaultContext
 
 import reactivemongo.api._
 import scala.concurrent._
 import duration._
 import play.api.libs.json._
 import play.api.data._
+import scala.util._
 
 import models._
 
 @RunWith(classOf[JUnitRunner])
 class ApplicationSpec extends Specification {
+  val testHashId = "5322327974b1a575b3c88b1835"
 
   "Application" should {
 
@@ -27,7 +30,6 @@ class ApplicationSpec extends Specification {
 
     //TODO: check mongo connection is up
 
-    //TODO: test failing on sending improper payload to /polls
     "send 400 on improper payload to /polls" in new WithApplication {
       val newPoll = Json.obj(
         "InvalidKey" -> "InvalidValue"
@@ -39,11 +41,9 @@ class ApplicationSpec extends Specification {
       contentType(result) must beSome("application/json")
     }
 
-    //TODO: test passing on sending proper formatted payload to /polls
-
     "send a 201 response when calling POST /polls with a valid payload" in new WithApplication{
       val newPoll = Json.obj(
-        "hashId" -> "5322327974b1a575b3c88b1835",
+        "hashId" -> testHashId,
         "title" -> "Cats v. Dogs",
         "questionText" -> "Who is cooler? Cats or Dogs?",
         "expirationDate" -> Option(DateTime.now + 2.months),
@@ -80,5 +80,11 @@ class ApplicationSpec extends Specification {
     contentType(result) must beSome("application/json")
   }
 
-  //TODO: send 200 plus poll data when calling GET /polls/:id of hashId inserted above
+  "send a 200 response plus the poll data when calling GET /polls/:id with a valid hashId" in new WithApplication{
+    val result = controllers.PollAPI.getPollById(testHashId)(FakeRequest())
+
+    status(result) must equalTo(200)
+    contentType(result) must beSome("application/json")
+  }
+
 }
