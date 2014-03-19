@@ -18,7 +18,6 @@ import models._
 
 @RunWith(classOf[JUnitRunner])
 class ApplicationSpec extends Specification {
-  val timeout: FiniteDuration = DurationInt(15).seconds
 
   "Application" should {
 
@@ -26,7 +25,7 @@ class ApplicationSpec extends Specification {
       route(FakeRequest(GET, "/boum")) must beNone
     }
 
-    //TODO: check mongo connection
+    //TODO: check mongo connection is up
 
     //TODO: test failing on sending improper payload to /polls
 
@@ -56,7 +55,6 @@ class ApplicationSpec extends Specification {
           "n" -> 1
         )
       )
-      //Insert the poll
       val result = controllers.PollAPI.createPollFromJson()(FakeRequest(POST, "/polls", FakeHeaders(), newPoll))
 
       status(result) must equalTo(201)
