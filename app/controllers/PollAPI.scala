@@ -45,7 +45,7 @@ object PollAPI extends Controller with MongoController {
         Logger.debug("Successfully inserted with error: " + error)
         Created(Json.obj("id" -> poll.hashId))
       }   
-    }.getOrElse(Future.successful(BadRequest("invalid json payload"))) //TODO: more detailed errors
+    }.getOrElse(Future.successful(BadRequest(Json.obj("error" ->"Malformed payload")))) //TODO: more detailed errors
   }
 
 }

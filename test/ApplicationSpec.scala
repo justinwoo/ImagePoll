@@ -28,6 +28,16 @@ class ApplicationSpec extends Specification {
     //TODO: check mongo connection is up
 
     //TODO: test failing on sending improper payload to /polls
+    "send 400 on improper payload to /polls" in new WithApplication {
+      val newPoll = Json.obj(
+        "InvalidKey" -> "InvalidValue"
+      )
+
+      val result = controllers.PollAPI.createPollFromJson()(FakeRequest(POST, "/polls", FakeHeaders(), newPoll))
+
+      status(result) must equalTo(400)
+      contentType(result) must beSome("application/json")
+    }
 
     //TODO: test passing on sending proper formatted payload to /polls
 
