@@ -39,16 +39,29 @@ object PollAPI extends Controller with MongoController {
   def createPollFromJson = Action.async(parse.json) { request =>
     println(request)
     println(request.body)
-    request.body.validate[Poll].map { poll =>
-      println(poll)
-      pollCollection.insert(poll).map { error =>
-        if(error.inError)
-          Logger.debug("Successfully inserted with error: " + error)
-        else
-          Logger.debug("Successfully inserted with no errors!")
-        Created(Json.obj("id" -> poll.hashId))
-      }   
-    }.getOrElse(Future.successful(BadRequest(Json.obj("error" ->"Malformed payload")))) //TODO: more detailed errors
+    
+    val pollResult = request.body.validate[Poll]
+    pollResult.fold(
+      errors => {
+        Logger.debug("Warning! Poll not validating with the following error(s): " + errors)
+        Future.successful(BadRequest(Json.obj("status" ->"validation-error", "message" -> JsError.toFlatJson(errors))))
+      },
+      poll => {
+        println(poll)
+        pollCollection.insert(poll).map { error =>
+          if(error.inError)
+            Logger.debug("Successfully inserted with error: " + error)
+          else
+            Logger.debug("Successfully inserted with no errors!")
+          Created(Json.obj("id" -> poll.hashId))
+        }
+      }
+
+    )
   }
+
+
+
+
 
 }
