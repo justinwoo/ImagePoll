@@ -25,9 +25,9 @@ object PollAPI extends Controller with MongoController {
     } yield p
 
     pollFuture.map { poll =>
-      if (poll == Json.obj("error" ->"NotFound")) {
-        println("Error: Poll Not found");
-        NotFound(poll)
+      if (poll == Json.obj("error" -> "NotFound")) {
+        Logger.info("Error: Poll Not found");
+        NotFound(Json.obj("status" -> "not-found-error", "message" -> ("The requested poll was not found: " + poll.toString)))
       } else {
         Ok(poll)
       }
@@ -37,8 +37,8 @@ object PollAPI extends Controller with MongoController {
   }
 
   def createPollFromJson = Action.async(parse.json) { request =>
-    println(request)
-    println(request.body)
+    Logger.info(request.toString)
+    Logger.info(request.body.toString)
     
     val pollResult = request.body.validate[Poll]
     pollResult.fold(
@@ -47,7 +47,7 @@ object PollAPI extends Controller with MongoController {
         Future.successful(BadRequest(Json.obj("status" ->"validation-error", "message" -> JsError.toFlatJson(errors))))
       },
       poll => {
-        println(poll)
+        Logger.info(poll.toString)
         pollCollection.insert(poll).map { error =>
           if(error.inError)
             Logger.debug("Successfully inserted with error: " + error)
