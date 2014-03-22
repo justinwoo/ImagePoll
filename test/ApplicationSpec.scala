@@ -20,7 +20,7 @@ import models._
 
 @RunWith(classOf[JUnitRunner])
 class ApplicationSpec extends Specification {
-  val testHashId = "5322327974b1a575b3c88b1835"
+  val testHashId = "Abc12"
 
   "Application" should {
 
