@@ -3,11 +3,11 @@ package models
 import com.github.nscala_time.time.Imports._
 import reactivemongo.bson._
 
+
 case class Answer (
   id: Int, 
   text: String,
-  s3ImageId: Long,
-  score: Long
+  s3ImageId: Long
 )
 
 case class VotingSystem (
@@ -33,4 +33,5 @@ object JsonFormats {
   implicit val answerFormat = Json.format[Answer]
   implicit val votingSystemFormat = Json.format[VotingSystem]
   implicit val pollFormat = Json.format[Poll]
+  
 }

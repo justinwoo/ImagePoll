@@ -52,8 +52,7 @@ class ApplicationSpec extends Specification {
             Json.obj(
               "id" -> 1,
               "text" -> "cats are cooler",
-              "s3ImageId" -> 0,
-              "score" -> 0
+              "s3ImageId" -> 0
             ), Json.obj(
               "id" ->2,
               "text" ->"dogs are cooler",

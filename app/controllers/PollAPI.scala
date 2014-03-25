@@ -15,6 +15,7 @@ import models.JsonFormats._
 
 object PollAPI extends Controller with MongoController {
   def pollCollection: JSONCollection = db.collection[JSONCollection]("polls")
+  def voteCollection: JSONCollection = db.collection[JSONCollection]("votes")
 
   def getPollById (id: String) = Action.async {
     val futurePollOption: Future[Option[JsObject]] = pollCollection.find(Json.obj("hashId" -> id)).one[JsObject]  
@@ -48,9 +49,9 @@ object PollAPI extends Controller with MongoController {
       },
       poll => {
         Logger.info(poll.toString)
-        pollCollection.insert(poll).map { error =>
-          if(error.inError)
-            Logger.debug("Successfully inserted with error: " + error)
+        pollCollection.insert(poll).map { lastError =>
+          if(lastError.inError)
+            Logger.debug("Successfully inserted with error: " + lastError)
           else
             Logger.debug("Successfully inserted with no errors!")
           Created(Json.obj("id" -> poll.hashId))
