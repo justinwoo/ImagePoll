@@ -10,11 +10,3 @@ case class Vote (
   answerIdsToIncrement: List[Int],
   voteTime: DateTime
 )
-
-object JsonFormat {
-  import play.api.libs.json.Json
-  import play.api.data._
-  import play.api.data.Forms._
-
-  implicit val voteFormat = Json.format[Vote]
-}

@@ -33,5 +33,6 @@ object JsonFormats {
   implicit val answerFormat = Json.format[Answer]
   implicit val votingSystemFormat = Json.format[VotingSystem]
   implicit val pollFormat = Json.format[Poll]
+  implicit val voteFormat = Json.format[Vote]
   
 }

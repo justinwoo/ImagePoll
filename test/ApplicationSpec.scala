@@ -56,8 +56,7 @@ class ApplicationSpec extends Specification {
             ), Json.obj(
               "id" ->2,
               "text" ->"dogs are cooler",
-              "s3ImageId" -> 0,
-              "score" -> 0
+              "s3ImageId" -> 0
             )),
         "votingSystem" -> Json.obj(
           "votingType" -> "selection",
@@ -85,5 +84,78 @@ class ApplicationSpec extends Specification {
     status(result) must equalTo(200)
     contentType(result) must beSome("application/json")
   }
+
+  "send a 400 response on improper payload to POST /polls/:id/votes" in new WithApplication{
+    val newVote = Json.obj(
+      "InvalidKey" -> "InvalidValue"
+    )
+    val result = controllers.PollAPI.createVoteFromJson(testHashId)(FakeRequest(POST, "/polls/" + testHashId + "/votes" , FakeHeaders(), newVote))
+    status(result) must equalTo(400)
+    contentType(result) must beSome("application/json")
+  }
+
+  "send a 400 response on proper payload but expired poll" in new WithApplication{
+    val expiredPoll = Json.obj(
+      "hashId" -> "expiredId",
+      "title" -> "Cats v. Dogs",
+      "questionText" -> "Who is cooler? Cats or Dogs?",
+      "expirationDate" -> Option(DateTime.now - 2.months),
+      "createdDate" -> Option(DateTime.now),
+      "answers" -> Json.arr(
+        Json.obj(
+          "id" -> 1,
+          "text" -> "cats are cooler",
+          "s3ImageId" -> 0
+        ), Json.obj(
+              "id" ->2,
+          "text" ->"dogs are cooler",
+          "s3ImageId" -> 0
+        )),
+      "votingSystem" -> Json.obj(
+        "votingType" -> "selection",
+        "n" -> 1
+      )
+    )
+    var result = controllers.PollAPI.createPollFromJson()(FakeRequest(POST, "/polls", FakeHeaders(), expiredPoll))
+    status(result) must equalTo(201)
+
+    val newVote = Json.obj(
+      "answerIdsToIncrement" -> List(1, 2)
+    )
+    result = controllers.PollAPI.createVoteFromJson("expiredId")(FakeRequest(POST, "/polls/" + "expiredId" + "/votes" , FakeHeaders(), newVote))
+    status(result) must equalTo(400)
+    contentType(result) must beSome("application/json")
+  }
+
+
+  "send a 400 response on trying to vote on the same answer more than once" in new WithApplication{
+    val newVote = Json.obj(
+      "answerIdsToIncrement" -> List(1, 2, 1)
+    )
+    val result = controllers.PollAPI.createVoteFromJson(testHashId)(FakeRequest(POST, "/polls/" + testHashId + "/votes" , FakeHeaders(), newVote))
+    status(result) must equalTo(400)
+    contentType(result) must beSome("application/json")  
+  }
+
+  "send a 404 response on proper payload but unknown /poll/:id" in new WithApplication{
+    val invalidHash = "-1"
+    val newVote = Json.obj(
+      "answerIdsToIncrement" -> List(1, 2)
+    )
+    val result = controllers.PollAPI.createVoteFromJson(invalidHash)(FakeRequest(POST, "/polls/" + invalidHash + "/votes" , FakeHeaders(), newVote))
+    status(result) must equalTo(404)
+    contentType(result) must beSome("application/json")  
+  }
+
+  "send a 201 response on valid payload to POST /polls/:id/votes" in new WithApplication{
+    val newVote = Json.obj(
+      "answerIdsToIncrement" -> List(1, 2)
+    )
+    val result = controllers.PollAPI.createVoteFromJson(testHashId)(FakeRequest(POST, "/polls/" + testHashId + "/votes" , FakeHeaders(), newVote))
+    status(result) must equalTo(201)
+    contentType(result) must beSome("application/json")  
+  }
+
+  //TODO: Send a 400 on valid payload but this ip address has already voted on this poll
 
 }

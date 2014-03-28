@@ -9,6 +9,7 @@ import scala.concurrent.Future
 import reactivemongo.api._
 import play.modules.reactivemongo.MongoController
 import play.modules.reactivemongo.json.collection.JSONCollection
+import com.github.nscala_time.time.Imports._
 
 import models._
 import models.JsonFormats._
@@ -61,8 +62,103 @@ object PollAPI extends Controller with MongoController {
     )
   }
 
+  def createVoteFromJson (id: String) = Action.async(parse.json) { request =>
+    //TODO: Grab the client ip address as the userid
+    //TODO: Check that the userid hasn't already voted previously
 
 
+    var validParams = true
+    var voteAnswers = List[Int]()
+
+    val voteAnswersOption = (request.body \ "answerIdsToIncrement").asOpt[List[Int]]
+    voteAnswersOption match {
+      case Some(list) => voteAnswers = list
+      case None => validParams = false
+    }
+
+    if (!validParams) {
+      Logger.info("Error: Missing payload argument")
+      Future.successful(BadRequest(Json.obj(
+        "status" -> "validation-error",
+        "message" -> Json.obj(
+          "obj.answerIdsToIncrement" -> Json.obj(
+            "msg" -> "error.path.missing",
+            "args" -> Json.arr()
+          )
+        ))))
+    } else {
+      if (voteAnswers.distinct.length != voteAnswers.length) {
+        Logger.info("Error: You cannot vote on the same answer more than once!")
+        Future.successful(BadRequest(Json.obj(
+          "status" -> "usage-error",
+          "message" -> Json.obj(
+            "obj.answerIdsToIncrement" -> Json.obj(
+              "msg" -> "You cannot vote on the same answer more than once",
+              "args" -> Json.arr()
+            )
+          ))))
+      } else {
+        val voteTime = DateTime.now
+        val futurePollOption = pollCollection.find(Json.obj("hashId" -> id)).one[JsObject]
+
+        val pollFuture: Future[JsObject] = for {
+          option <- futurePollOption
+          p <- Future(option.getOrElse(Json.obj("error" ->"NotFound")))
+        } yield p
+
+        pollFuture.map { poll =>
+          if (poll == Json.obj("error" -> "NotFound")) {
+            Logger.info("Error: Poll Not found");
+            NotFound(Json.obj("status" -> "not-found-error", "message" -> ("The requested poll was not found: " + poll.toString)))
+          } else {
+            val oldPoll = poll.as[Poll]
+
+            if (voteTime.millis >= oldPoll.expirationDate.get.millis) {
+              BadRequest(Json.obj("status" -> "poll-expired"))
+            } else {
+              var answerIds = List[Int]()
+              var validAnswerIds = true
+              oldPoll.answers.foreach((answer: Answer) =>
+                answerIds  = answerIds :+ answer.id
+              )
+
+              voteAnswers.foreach((i: Int) =>
+                if (!answerIds.contains(i)) {
+                  validAnswerIds = false
+                }
+              )
+
+              if(!validAnswerIds) {
+                Logger.info("Error: Invalid Answer Ids passed!")
+                BadRequest(Json.obj(
+                  "status" -> "validation-error",
+                  "message" -> Json.obj(
+                    "obj.answerIdsToIncrement" -> Json.obj(
+                      "msg" -> "error.invalid-id",
+                      "args" -> Json.arr()
+                    )
+                  )))
+              } else {
+                val voteTest = Json.obj(
+                  "pollId" -> id,
+                  "userId" -> "1", //TODO: use the client ip address instead
+                  "answerIdsToIncrement" -> voteAnswers,
+                  "voteTime" -> voteTime
+                )
+                voteCollection.insert(voteTest).map { lastError =>
+                  if(lastError.inError)
+                    Logger.info("Successfully inserted with error: " + lastError)
+                  else
+                    Logger.info("Successfully inserted with no errors!")
+                }
+                Created(voteTest)
+              }
+            }
+          }
+        }
+      }
+    }  
+  }
 
 
 }
