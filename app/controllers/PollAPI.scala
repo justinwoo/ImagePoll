@@ -6,8 +6,6 @@ import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
 import scala.concurrent.Future
-import scala.concurrent.Await
-import scala.concurrent.duration._
 import reactivemongo.api._
 import play.modules.reactivemongo.MongoController
 import play.modules.reactivemongo.json.collection.JSONCollection
@@ -66,10 +64,6 @@ object PollAPI extends Controller with MongoController {
   }
 
   def createVoteFromJson (id: String) = Action.async(parse.json) { request =>
-    //TODO: Grab the client ip address as the userid
-    //TODO: Check that the userid hasn't already voted previously
-
-
     var validParams = true
     var voteAnswers = List[Int]()
 
