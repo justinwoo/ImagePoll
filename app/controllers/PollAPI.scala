@@ -6,10 +6,13 @@ import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
 import scala.concurrent.Future
+import scala.concurrent.Await
+import scala.concurrent.duration._
 import reactivemongo.api._
 import play.modules.reactivemongo.MongoController
 import play.modules.reactivemongo.json.collection.JSONCollection
 import com.github.nscala_time.time.Imports._
+import scala.util._
 
 import models._
 import models.JsonFormats._
@@ -106,15 +109,15 @@ object PollAPI extends Controller with MongoController {
           p <- Future(option.getOrElse(Json.obj("error" ->"NotFound")))
         } yield p
 
-        pollFuture.map { poll =>
+        pollFuture flatMap { poll =>
           if (poll == Json.obj("error" -> "NotFound")) {
             Logger.info("Error: Poll Not found");
-            NotFound(Json.obj("status" -> "not-found-error", "message" -> ("The requested poll was not found: " + poll.toString)))
+            Future(NotFound(Json.obj("status" -> "not-found-error", "message" -> ("The requested poll was not found: " + poll.toString))))
           } else {
             val oldPoll = poll.as[Poll]
 
             if (voteTime.millis >= oldPoll.expirationDate.get.millis) {
-              BadRequest(Json.obj("status" -> "poll-expired"))
+              Future(BadRequest(Json.obj("status" -> "poll-expired")))
             } else {
               var answerIds = List[Int]()
               var validAnswerIds = true
@@ -130,34 +133,49 @@ object PollAPI extends Controller with MongoController {
 
               if(!validAnswerIds) {
                 Logger.info("Error: Invalid Answer Ids passed!")
-                BadRequest(Json.obj(
+                Future(BadRequest(Json.obj(
                   "status" -> "validation-error",
                   "message" -> Json.obj(
                     "obj.answerIdsToIncrement" -> Json.obj(
                       "msg" -> "error.invalid-id",
                       "args" -> Json.arr()
                     )
-                  )))
+                  ))))
               } else {
-                val voteTest = Json.obj(
-                  "pollId" -> id,
-                  "userId" -> "1", //TODO: use the client ip address instead
-                  "answerIdsToIncrement" -> voteAnswers,
-                  "voteTime" -> voteTime
-                )
-                voteCollection.insert(voteTest).map { lastError =>
-                  if(lastError.inError)
-                    Logger.info("Successfully inserted with error: " + lastError)
-                  else
-                    Logger.info("Successfully inserted with no errors!")
+                val prevVotesFuture = getVotesByUserId(request.remoteAddress)
+                prevVotesFuture map { prevVotes =>
+                  if (prevVotes.length != 0) {
+                    Logger.info("Erorr: Cannot vote more than once on a poll!")
+                    BadRequest(Json.obj("status" -> "user-vote-error", "message" -> ("The current user has already voted on this poll. UserId:" + request.remoteAddress)))
+                  } else {
+                    val voteTest = Json.obj(
+                      "pollId" -> id,
+                      "userId" -> request.remoteAddress,
+                      "answerIdsToIncrement" -> voteAnswers,
+                      "voteTime" -> voteTime
+                    )
+                    voteCollection.insert(voteTest).map { lastError =>
+                      if(lastError.inError)
+                        Logger.info("Successfully inserted with error: " + lastError)
+                      else
+                        Logger.info("Successfully inserted with no errors!")                      
+                    }
+                    Created(voteTest)                    
+                  }
                 }
-                Created(voteTest)
               }
             }
           }
         }
       }
     }  
+  }
+
+
+  //TODO: seperate out all of the CRUD operations (like below) from the actions to keep the code DRYer
+  def getVotesByUserId (id: String): Future[List[Vote]] = {
+    val cursor: Cursor[Vote] = voteCollection.find(Json.obj("userId" -> id)).cursor[Vote]
+    return cursor.collect[List]()
   }
 
 
