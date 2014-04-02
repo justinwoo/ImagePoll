@@ -107,7 +107,7 @@ class ApplicationSpec extends Specification {
           "text" -> "cats are cooler",
           "s3ImageId" -> 0
         ), Json.obj(
-              "id" ->2,
+          "id" ->2,
           "text" ->"dogs are cooler",
           "s3ImageId" -> 0
         )),
@@ -137,6 +137,16 @@ class ApplicationSpec extends Specification {
     contentType(result) must beSome("application/json")  
   }
 
+  "send a 400 response on trying to vote with an answerId that does not exist in the poll" in new WithApplication{
+    val newVote = Json.obj(
+      "answerIdsToIncrement" -> List(1, 2, 3)
+    )
+    val result = controllers.PollAPI.createVoteFromJson(testHashId)(FakeRequest(POST, "/polls/" + testHashId + "/votes" , FakeHeaders(), newVote))
+    status(result) must equalTo(400)
+    contentType(result) must beSome("application/json")
+  }
+
+
   "send a 404 response on proper payload but unknown /poll/:id" in new WithApplication{
     val invalidHash = "-1"
     val newVote = Json.obj(
@@ -154,8 +164,14 @@ class ApplicationSpec extends Specification {
     val result = controllers.PollAPI.createVoteFromJson(testHashId)(FakeRequest(POST, "/polls/" + testHashId + "/votes" , FakeHeaders(), newVote))
     status(result) must equalTo(201)
     contentType(result) must beSome("application/json")  
+  } 
+
+  "send a 400 on valid payload to POST /polls/:id/votes but the current user has already voted on this poll" in new WithApplication{
+    val newVote = Json.obj(
+      "answerIdsToIncrement" -> List(1, 2)
+    )
+    val result = controllers.PollAPI.createVoteFromJson(testHashId)(FakeRequest(POST, "/polls/" + testHashId + "/votes" , FakeHeaders(), newVote))
+    status(result) must equalTo(400)
+    contentType(result) must beSome("application/json")
   }
-
-  //TODO: Send a 400 on valid payload but this ip address has already voted on this poll
-
 }
