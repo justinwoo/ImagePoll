@@ -28,7 +28,6 @@ class ApplicationSpec extends Specification {
       route(FakeRequest(GET, "/boum")) must beNone
     }
 
-    //TODO: check mongo connection is up
 
     "send 400 on improper payload to /polls" in new WithApplication {
       val newPoll = Json.obj(

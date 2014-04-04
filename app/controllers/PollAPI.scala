@@ -136,7 +136,7 @@ object PollAPI extends Controller with MongoController {
                     )
                   ))))
               } else {
-                val prevVotesFuture = getVotesByUserId(request.remoteAddress)
+                val prevVotesFuture = getVotesFutureByUserId(request.remoteAddress)
                 prevVotesFuture map { prevVotes =>
                   if (prevVotes.length != 0) {
                     Logger.info("Erorr: Cannot vote more than once on a poll!")
@@ -165,9 +165,37 @@ object PollAPI extends Controller with MongoController {
     }  
   }
 
+  def getPollResults (id: String) = Action.async {
+    val pollFutureOption = getPollFutureByPollId(id)
+    val pollFuture: Future[JsObject] = for {
+      option <- pollFutureOption
+      p <- Future(option.getOrElse(Json.obj("error" ->"NotFound")))
+    } yield p
 
-  //TODO: seperate out all of the CRUD operations (like below) from the actions to keep the code DRYer
-  def getVotesByUserId (id: String): Future[List[Vote]] = {
+    pollFuture flatMap { poll =>
+      if (poll == Json.obj("error" -> "NotFound")) {
+        Logger.info("Error: Poll Not found");
+        Future.successful(NotFound(Json.obj("status" -> "not-found-error", "message" -> ("The requested poll was not found: " + poll.toString))))
+      } else {
+        val voteFuture = getVotesFutureByPollId(id)
+        voteFuture flatMap { votes =>
+            println(votes)
+            Future.successful(Ok(Json.obj("votes" -> votes)))
+        }
+      }
+    }
+  }
+
+  def getVotesFutureByPollId (id: String): Future[List[JsObject]] = {
+    val cursor: Cursor[JsObject] = voteCollection.find(Json.obj("pollId" -> id)).cursor[JsObject]
+    cursor.collect[List]()
+  }
+
+  def getPollFutureByPollId (id: String): Future[Option[JsObject]] = {
+    pollCollection.find(Json.obj("hashId" -> id)).one[JsObject]    
+  }
+
+  def getVotesFutureByUserId (id: String): Future[List[Vote]] = {
     val cursor: Cursor[Vote] = voteCollection.find(Json.obj("userId" -> id)).cursor[Vote]
     return cursor.collect[List]()
   }
