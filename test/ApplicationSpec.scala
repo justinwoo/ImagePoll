@@ -173,4 +173,19 @@ class ApplicationSpec extends Specification {
     status(result) must equalTo(400)
     contentType(result) must beSome("application/json")
   }
+
+  "send a 404 on GET /polls/:id/votes with invalid id" in new WithApplication{
+    val invalidHash = "-1"
+    val result = controllers.PollAPI.getPollResults(invalidHash)(FakeRequest())
+
+    status(result) must equalTo(404)
+    contentType(result) must beSome("application/json")
+  }
+
+  "send a 200 on GET /polls/:id/votes with valid id" in new WithApplication{
+    val result = controllers.PollAPI.getPollResults(testHashId)(FakeRequest())
+
+    status(result) must equalTo(200)
+    contentType(result) must beSome("application/json")
+  }
 }

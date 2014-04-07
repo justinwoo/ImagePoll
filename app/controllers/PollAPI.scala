@@ -179,8 +179,8 @@ object PollAPI extends Controller with MongoController {
       } else {
         val voteFuture = getVotesFutureByPollId(id)
         voteFuture flatMap { votes =>
-            println(votes)
-            Future.successful(Ok(Json.obj("votes" -> votes)))
+          println(votes)
+          Future.successful(Ok(Json.obj("votes" -> votes)))
         }
       }
     }
