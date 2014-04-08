@@ -178,9 +178,9 @@ object PollAPI extends Controller with MongoController {
         Future.successful(NotFound(Json.obj("status" -> "not-found-error", "message" -> ("The requested poll was not found: " + poll.toString))))
       } else {
         val voteFuture = getVotesFutureByPollId(id)
-        voteFuture flatMap { votes =>
+        voteFuture map { votes =>
           println(votes)
-          Future.successful(Ok(Json.toJson(votes)))
+          Ok(Json.toJson(votes))
         }
       }
     }
