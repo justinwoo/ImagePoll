@@ -16,3 +16,5 @@ dist
 .DS_STORE
 [#]*[#]
 *~
+.ensime
+.ensime_lucene
