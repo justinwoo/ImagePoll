@@ -200,5 +200,9 @@ object PollAPI extends Controller with MongoController {
     return cursor.collect[List]()
   }
 
+  def removeVotesByPollId (id: String, userId: String) = {
+    voteCollection.remove(Json.obj("pollId" -> id, "userId" -> userId))
+  }
+
 
 }

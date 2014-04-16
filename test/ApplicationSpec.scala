@@ -157,6 +157,9 @@ class ApplicationSpec extends Specification {
   }
 
   "send a 201 response on valid payload to POST /polls/:id/votes" in new WithApplication{
+    //Remove any previous votes (since we only allow a user to vote on poll once)
+    controllers.PollAPI.removeVotesByPollId(testHashId, "127.0.0.1")
+
     val newVote = Json.obj(
       "answerIdsToIncrement" -> List(1, 2)
     )
